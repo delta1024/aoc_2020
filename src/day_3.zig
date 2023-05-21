@@ -8,19 +8,21 @@ const Grid = struct {
     const Pos = struct {
         x: usize = 0,
         y: usize = 0,
+        right: usize,
+        down: usize,
         pub fn move(self: *Pos) void {
             const grid = @fieldParentPtr(Grid, "position", self);
             const limit = grid.items[0].len;
-            self.x += 3;
-            self.y += 1;
+            self.x += self.right;
+            self.y += self.down;
             if (self.x >= limit) {
                 self.x = self.x % limit;
             }
         }
     };
-    position: Pos = Pos{},
+    position: Pos,
     items: [][]bool,
-    pub fn init(alloctor: Allocator, list: ArayList([]u8)) !Grid {
+    pub fn init(alloctor: Allocator, list: *const ArayList([]u8), position: Pos) !Grid {
         var y_array = try alloctor.alloc([]bool, list.items.len);
         const x_len = list.items[0].len;
         for (y_array) |_, i| {
@@ -29,13 +31,13 @@ const Grid = struct {
                 y_array[i][j] = c == '#';
             }
         }
-        return .{ .items = y_array };
+        return .{ .items = y_array, .position = position };
     }
     pub fn validate(self: *Grid) usize {
         // Prime the pump
         self.position.move();
         var count: usize = 0;
-        while (self.items.len != self.position.y) : (self.position.move()) {
+        while (self.items.len > self.position.y) : (self.position.move()) {
             if (self.items[self.position.y][self.position.x]) {
                 count += 1;
             }
@@ -75,7 +77,15 @@ pub fn main() !void {
     const allocator = arena.allocator();
     const file = try std.fs.cwd().openFile("input/day_3.txt", .{ .mode = .read_only });
     const list = try readFileToList(allocator, &file);
-    var grid = try Grid.init(allocator, list);
-    log.info("{d}", .{grid.validate()});
+    var grid_3 = try Grid.init(allocator, &list, .{ .right = 3, .down = 1 });
+    var count = grid_3.validate();
+    log.info("Part one: {d}", .{count});
+    const permutaions: [4]Grid.Pos = .{ .{ .right = 1, .down = 1 }, .{ .right = 5, .down = 1 }, .{ .right = 7, .down = 1 }, .{ .right = 1, .down = 2 } };
+    for (permutaions) |pos| {
+        var grid = try Grid.init(allocator, &list, pos);
+        count *= grid.validate();
+    }
+
+    log.info("Part two: {d}", .{count});
     // Puzzle info: https://adventofcode.com/2020/day/3
 }
