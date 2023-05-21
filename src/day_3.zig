@@ -31,6 +31,17 @@ const Grid = struct {
         }
         return .{ .items = y_array };
     }
+    pub fn validate(self: *Grid) usize {
+        // Prime the pump
+        self.position.move();
+        var count: usize = 0;
+        while (self.items.len != self.position.y) : (self.position.move()) {
+            if (self.items[self.position.y][self.position.x]) {
+                count += 1;
+            }
+        }
+        return count;
+    }
     pub fn format(self: Grid, comptime _: []const u8, _: std.fmt.FormatOptions, w: anytype) !void {
         for (self.items) |row| {
             for (row) |point| {
@@ -65,6 +76,6 @@ pub fn main() !void {
     const file = try std.fs.cwd().openFile("input/day_3.txt", .{ .mode = .read_only });
     const list = try readFileToList(allocator, &file);
     var grid = try Grid.init(allocator, list);
-    std.debug.print("{}", .{grid});
+    log.info("{d}", .{grid.validate()});
     // Puzzle info: https://adventofcode.com/2020/day/3
 }
